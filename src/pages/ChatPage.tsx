@@ -71,6 +71,34 @@ const getStatusColor = (status: string) => {
   }
 };
 
+// Mock vendors for sidebar
+const mockVendors = [
+  {
+    id: "V001",
+    name: "Premium Transport Co.",
+    profilePhoto: "",
+    lastMessage: "I'll be there 15 minutes early with a luxury sedan.",
+    lastMessageTime: "2:30 PM",
+    hasNewMessage: false
+  },
+  {
+    id: "V002", 
+    name: "City Rides Ltd.",
+    profilePhoto: "",
+    lastMessage: "Your ride is confirmed for tomorrow",
+    lastMessageTime: "1:45 PM",
+    hasNewMessage: true
+  },
+  {
+    id: "V003",
+    name: "Express Delivery",
+    profilePhoto: "",
+    lastMessage: "Package ready for pickup",
+    lastMessageTime: "12:30 PM", 
+    hasNewMessage: false
+  }
+];
+
 export default function ChatPage() {
   const { bookingId, vendorId } = useParams<{ bookingId: string; vendorId: string }>();
   const navigate = useNavigate();
@@ -86,6 +114,10 @@ export default function ChatPage() {
     navigate(`/booking/${bookingId}/vendors`);
   };
 
+  const handleVendorSelect = (selectedVendorId: string) => {
+    navigate(`/booking/${bookingId}/vendor/${selectedVendorId}/chat`);
+  };
+
   const handleSendMessage = (content: string) => {
     const newMessage: Message = {
       id: `M${Date.now()}`,
@@ -97,14 +129,14 @@ export default function ChatPage() {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  if (!booking || !vendor) {
+  if (!booking) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-medium text-foreground mb-2">Chat not found</h2>
-          <Button onClick={handleBackClick} variant="outline">
+          <h2 className="text-xl font-medium text-foreground mb-2">Booking not found</h2>
+          <Button onClick={() => navigate('/')} variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Vendors
+            Back to Bookings
           </Button>
         </div>
       </div>
@@ -112,10 +144,11 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <div className="border-b border-border bg-card/50">
-        <div className="p-4">
+    <div className="min-h-screen bg-background flex">
+      {/* Left Sidebar - Vendor List */}
+      <div className="w-80 border-r border-border bg-card/30">
+        {/* Header */}
+        <div className="p-4 border-b border-border">
           <Button 
             onClick={handleBackClick} 
             variant="ghost" 
@@ -125,95 +158,168 @@ export default function ChatPage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Vendors
           </Button>
-          
-          {/* Vendor Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={vendor.profilePhoto} alt={vendor.name} />
-                <AvatarFallback className="bg-muted text-muted-foreground font-medium">
-                  {vendor.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h2 className="font-medium text-foreground">{vendor.name}</h2>
-                <p className="text-sm text-muted-foreground">{booking.serviceType}</p>
-              </div>
-            </div>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsBookingDetailsExpanded(!isBookingDetailsExpanded)}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              {isBookingDetailsExpanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          <h2 className="font-medium text-foreground">Vendors</h2>
+          <p className="text-sm text-muted-foreground">{booking.serviceType}</p>
         </div>
 
-        {/* Expandable Booking Details */}
-        {isBookingDetailsExpanded && (
-          <div className="px-4 pb-4">
-            <Card className="p-4 bg-background">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">Booking Details</span>
-                  <Badge className={`${getStatusColor(booking.status)} capitalize text-xs`}>
-                    {booking.status}
-                  </Badge>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Booking ID:</span>
-                    <p className="font-medium text-foreground">{booking.id}</p>
+        {/* Vendor List */}
+        <ScrollArea className="h-full">
+          <div className="p-2">
+            {mockVendors.map((vendorItem) => (
+              <div
+                key={vendorItem.id}
+                onClick={() => handleVendorSelect(vendorItem.id)}
+                className={`p-3 rounded-lg mb-2 cursor-pointer transition-colors ${
+                  vendorId === vendorItem.id 
+                    ? 'bg-primary/10 border border-primary/20' 
+                    : 'hover:bg-muted/50'
+                }`}
+              >
+                <div className="flex items-start space-x-3">
+                  <Avatar className="h-10 w-10 flex-shrink-0">
+                    <AvatarImage src={vendorItem.profilePhoto} alt={vendorItem.name} />
+                    <AvatarFallback className="bg-muted text-muted-foreground font-medium text-sm">
+                      {vendorItem.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-medium text-foreground text-sm truncate">
+                        {vendorItem.name}
+                      </h3>
+                      {vendorItem.hasNewMessage && (
+                        <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate mb-1">
+                      {vendorItem.lastMessage}
+                    </p>
+                    <span className="text-xs text-muted-foreground">
+                      {vendorItem.lastMessageTime}
+                    </span>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Service:</span>
-                    <p className="font-medium text-foreground">{booking.serviceType}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Date:</span>
-                    <p className="font-medium text-foreground">{booking.startDate}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Time:</span>
-                    <p className="font-medium text-foreground">{booking.time}</p>
-                  </div>
-                </div>
-                
-                <div>
-                  <span className="text-muted-foreground text-sm">Pickup Location:</span>
-                  <p className="font-medium text-foreground">{booking.fromLocation}</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    → {booking.toLocation}
-                  </p>
                 </div>
               </div>
-            </Card>
+            ))}
           </div>
-        )}
+        </ScrollArea>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="max-w-4xl mx-auto space-y-4">
-          {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
-          ))}
-        </div>
-      </ScrollArea>
+      {/* Right Side - Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {vendorId && vendor ? (
+          <>
+            {/* Chat Header */}
+            <div className="border-b border-border bg-card/50">
+              <div className="p-4">
+                {/* Vendor Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={vendor.profilePhoto} alt={vendor.name} />
+                      <AvatarFallback className="bg-muted text-muted-foreground font-medium">
+                        {vendor.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h2 className="font-medium text-foreground">{vendor.name}</h2>
+                      <p className="text-sm text-muted-foreground">{booking.serviceType}</p>
+                    </div>
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsBookingDetailsExpanded(!isBookingDetailsExpanded)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    {isBookingDetailsExpanded ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
 
-      {/* Input */}
-      <div className="border-t border-border">
-        <div className="max-w-4xl mx-auto">
-          <ChatInput onSendMessage={handleSendMessage} />
-        </div>
+              {/* Expandable Booking Details */}
+              {isBookingDetailsExpanded && (
+                <div className="px-4 pb-4">
+                  <Card className="p-4 bg-background">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">Booking Details</span>
+                        <Badge className={`${getStatusColor(booking.status)} capitalize text-xs`}>
+                          {booking.status}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Booking ID:</span>
+                          <p className="font-medium text-foreground">{booking.id}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Service:</span>
+                          <p className="font-medium text-foreground">{booking.serviceType}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Date:</span>
+                          <p className="font-medium text-foreground">{booking.startDate}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Time:</span>
+                          <p className="font-medium text-foreground">{booking.time}</p>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <span className="text-muted-foreground text-sm">Pickup Location:</span>
+                        <p className="font-medium text-foreground">{booking.fromLocation}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          → {booking.toLocation}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              )}
+            </div>
+
+            {/* Messages */}
+            <ScrollArea className="flex-1 p-4">
+              <div className="max-w-4xl mx-auto space-y-4">
+                {messages.length > 0 ? (
+                  messages.map((message) => (
+                    <ChatMessage key={message.id} message={message} />
+                  ))
+                ) : (
+                  <div className="flex items-center justify-center h-40">
+                    <div className="text-center">
+                      <p className="text-muted-foreground">No messages yet</p>
+                      <p className="text-sm text-muted-foreground mt-1">Start a conversation with {vendor.name}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* Input */}
+            <div className="border-t border-border">
+              <div className="max-w-4xl mx-auto">
+                <ChatInput onSendMessage={handleSendMessage} />
+              </div>
+            </div>
+          </>
+        ) : (
+          /* No vendor selected state */
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-foreground mb-2">Select a vendor</h3>
+              <p className="text-muted-foreground">Choose a vendor from the list to start chatting</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
